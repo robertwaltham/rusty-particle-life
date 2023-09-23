@@ -22,6 +22,7 @@ enum AppState {
 const SIZE: (u32, u32) = (512, 512);
 // const INIT_WORKGROUP_SIZE: u32 = 8;
 
+#[cfg(target_arch = "wasm32")]
 fn main() {
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.
@@ -49,6 +50,15 @@ fn main() {
             .add_state::<AppState>()
             .run();
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, Menu, RenderPlugin))
+        .add_systems(Startup, setup)
+        .add_state::<AppState>()
+        .run();
 }
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
