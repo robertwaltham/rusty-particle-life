@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::Resource,
+    prelude::{Color, Resource},
     reflect::Reflect,
     render::{extract_resource::ExtractResource, render_resource::ShaderType},
 };
@@ -12,9 +12,9 @@ const MAX_PARTICLES: usize = 1024;
     ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Default, Debug,
 )]
 #[repr(C)]
-struct Particle {
+pub struct Particle {
     position: [f32; 3],
-    _padding1: f32,
+    _padding1: f32, // https://stackoverflow.com/a/75525055
     velocity: [f32; 3],
     _padding2: f32,
     acceleration: [f32; 3], // TODO: is this needed
@@ -22,10 +22,18 @@ struct Particle {
     index: f32,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default)]
 #[repr(C)] // TODO: is this needed for the struct, since only the underlying array will be passed into gpu land
-struct Weights([[f32; MAX_FLAVOURS]; MAX_FLAVOURS]);
+pub struct Weights([[f32; MAX_FLAVOURS]; MAX_FLAVOURS]);
 
-#[derive(Resource)]
+#[derive(Resource, Reflect, ExtractResource, Clone, Copy)]
 #[repr(C)]
-struct Particles([Particle; MAX_PARTICLES]);
+pub struct Particles([Particle; MAX_PARTICLES]);
+impl Default for Particles {
+    fn default() -> Self {
+        Self([Particle::default(); MAX_PARTICLES])
+    }
+}
+
+#[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default)]
+pub struct ParticleColours([Color; MAX_FLAVOURS]);

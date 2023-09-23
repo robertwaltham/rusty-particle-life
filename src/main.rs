@@ -4,6 +4,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
 };
 use menu::Menu;
+use objects::*;
 
 pub mod menu;
 pub mod objects;
@@ -45,20 +46,23 @@ fn main() {
 
         body.append_child(&val).expect("couldn't add node");
     } else {
-        App::new()
-            .add_plugins((DefaultPlugins, Menu, RenderPlugin))
-            .add_systems(Startup, setup)
-            .add_state::<AppState>()
-            .run();
+        run();
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
+    run();
+}
+
+fn run() {
     App::new()
         .add_plugins((DefaultPlugins, Menu, RenderPlugin))
         .add_systems(Startup, setup)
         .add_state::<AppState>()
+        .init_resource::<Particles>()
+        .init_resource::<Weights>()
+        .init_resource::<ParticleColours>()
         .run();
 }
 
