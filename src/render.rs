@@ -63,7 +63,7 @@ impl FromWorld for ComputeShaderPipeline {
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
                     label: None,
                     entries: &[
-                        // todo: entries
+                        // TODO: entries
                     ],
                 });
         let shader = world.resource::<AssetServer>().load("shaders/compute.wgsl");
@@ -103,7 +103,7 @@ fn queue_bind_group(
         label: None,
         layout: &pipeline.texture_bind_group_layout,
         entries: &[
-            // todo: entries
+            // TODO: entries
         ],
     });
     commands.insert_resource(RenderImageBindGroup(bind_group));

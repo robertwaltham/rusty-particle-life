@@ -22,5 +22,7 @@ fn ui_system(
     egui::SidePanel::left("side_panel")
         .resizable(false)
         .min_width(PANEL_WIDTH)
-        .show(ctx, |ui| {});
+        .show(ctx, |ui| {
+            // TODO: controls
+        });
 }

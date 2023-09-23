@@ -3,11 +3,10 @@ use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
 };
-use js_sys::Object;
 use menu::Menu;
-use web_sys::console;
 
 pub mod menu;
+pub mod objects;
 pub mod render;
 
 #[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -20,10 +19,12 @@ enum AppState {
 }
 
 const SIZE: (u32, u32) = (512, 512);
-// const INIT_WORKGROUP_SIZE: u32 = 8;
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
+    use js_sys::Object;
+    use web_sys::console;
+
     // Use `web_sys`'s global `window` function to get a handle on the global
     // window object.
     let window = web_sys::window().expect("no global `window` exists");
