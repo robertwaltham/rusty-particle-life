@@ -22,6 +22,7 @@ enum AppState {
 }
 
 const SIZE: (u32, u32) = (512, 512);
+const WORKGROUP_SIZE: (u32, u32, u32) = (8, 8, 1);
 
 #[cfg(target_arch = "wasm32")]
 fn main() {

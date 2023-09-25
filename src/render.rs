@@ -1,7 +1,8 @@
 use bevy::{
     prelude::*,
     render::{
-        extract_resource::ExtractResource, render_graph::RenderGraph, render_resource::BindGroup,
+        extract_resource::{ExtractResource, ExtractResourcePlugin},
+        render_graph::RenderGraph,
         Render, RenderApp, RenderSet,
     },
 };
@@ -13,9 +14,6 @@ use crate::sim_shader_pipeline::{SimulationShaderNode, SimulationShaderPipeline}
 pub struct RenderImage {
     pub image: Handle<Image>,
 }
-
-#[derive(Resource)]
-pub struct RenderImageBindGroup(pub BindGroup);
 
 pub enum ComputeShaderState {
     Loading,
@@ -30,6 +28,8 @@ const RENDER: &str = "render";
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((ExtractResourcePlugin::<RenderImage>::default(),));
+
         let render_app = app.sub_app_mut(RenderApp);
 
         render_app.add_systems(

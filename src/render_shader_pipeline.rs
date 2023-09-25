@@ -3,17 +3,26 @@ use std::borrow::Cow;
 use bevy::{
     prelude::*,
     render::{
+        render_asset::RenderAssets,
         render_graph::{self},
         render_resource::{
-            BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor,
+            BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             CachedComputePipelineId, CachedPipelineState, ComputePassDescriptor,
-            ComputePipelineDescriptor, PipelineCache,
+            ComputePipelineDescriptor, PipelineCache, ShaderStages, StorageTextureAccess,
+            TextureFormat, TextureViewDimension,
         },
         renderer::{RenderContext, RenderDevice},
     },
 };
 
-use crate::render::{ComputeShaderState, RenderImageBindGroup};
+use crate::{
+    render::{ComputeShaderState, RenderImage},
+    SIZE, WORKGROUP_SIZE,
+};
+
+#[derive(Resource)]
+pub struct RenderBindGroup(pub BindGroup);
 
 #[derive(Resource)]
 pub struct RenderShaderPipeline {
@@ -28,15 +37,22 @@ impl FromWorld for RenderShaderPipeline {
             world
                 .resource::<RenderDevice>()
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: &[
-                        // TODO: entries
-                    ],
+                    label: Some("render bind group"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: TextureFormat::Rgba8Unorm,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
+                    }],
                 });
         let shader = world.resource::<AssetServer>().load("shaders/render.wgsl");
         let pipeline_cache = world.resource_mut::<PipelineCache>();
         let init_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-            label: None,
+            label: Some(Cow::from("render init pipeline")),
             layout: vec![texture_bind_group_layout.clone()],
             shader: shader.clone(),
             shader_defs: vec![],
@@ -44,7 +60,7 @@ impl FromWorld for RenderShaderPipeline {
             push_constant_ranges: vec![],
         });
         let update_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-            label: None,
+            label: Some(Cow::from("render update pipeline")),
             layout: vec![texture_bind_group_layout.clone()],
             shader,
             shader_defs: vec![],
@@ -63,17 +79,21 @@ impl FromWorld for RenderShaderPipeline {
 pub fn queue_bind_group(
     mut commands: Commands,
     pipeline: Res<RenderShaderPipeline>,
-    // gpu_images: Res<RenderAssets<Image>>,
+    gpu_images: Res<RenderAssets<Image>>,
+    output_image: Res<RenderImage>,
     render_device: Res<RenderDevice>,
 ) {
+    let output_view = &gpu_images[&output_image.image];
+
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-        label: None,
+        label: Some("render bind group"),
         layout: &pipeline.texture_bind_group_layout,
-        entries: &[
-            // TODO: entries
-        ],
+        entries: &[BindGroupEntry {
+            binding: 0,
+            resource: BindingResource::TextureView(&output_view.texture_view),
+        }],
     });
-    commands.insert_resource(RenderImageBindGroup(bind_group));
+    commands.insert_resource(RenderBindGroup(bind_group));
 }
 
 pub struct RenderShaderNode {
@@ -119,12 +139,9 @@ impl render_graph::Node for RenderShaderNode {
         render_context: &mut RenderContext,
         world: &World,
     ) -> Result<(), render_graph::NodeRunError> {
-        let texture_bind_group = &world.resource::<RenderImageBindGroup>().0;
+        let texture_bind_group = &world.resource::<RenderBindGroup>().0;
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = world.resource::<RenderShaderPipeline>();
-        // let state = &world.resource::<RenderState>().state;
-        // let window_size = &world.resource::<Params>().size;
-        // let workgroup_size = (window_size / 8) as u32;
 
         let mut pass = render_context
             .command_encoder()
@@ -140,14 +157,14 @@ impl render_graph::Node for RenderShaderNode {
                     .get_compute_pipeline(pipeline.init_pipeline)
                     .unwrap();
                 pass.set_pipeline(init_pipeline);
-                pass.dispatch_workgroups(1, 1, 1); // TODO: workgroup size
+                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE.0, SIZE.1 / WORKGROUP_SIZE.1, 1);
             }
             ComputeShaderState::Update => {
                 let update_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.update_pipeline)
                     .unwrap();
                 pass.set_pipeline(update_pipeline);
-                pass.dispatch_workgroups(1, 1, 1); // TODO: workgroup size
+                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE.0, SIZE.1 / WORKGROUP_SIZE.1, 1);
             }
         }
 

@@ -5,7 +5,7 @@ use bevy::{
     render::{
         render_graph::{self},
         render_resource::{
-            BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor,
+            BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor,
             CachedComputePipelineId, CachedPipelineState, ComputePassDescriptor,
             ComputePipelineDescriptor, PipelineCache,
         },
@@ -13,7 +13,10 @@ use bevy::{
     },
 };
 
-use crate::render::{ComputeShaderState, RenderImageBindGroup};
+use crate::render::ComputeShaderState;
+
+#[derive(Resource)]
+pub struct SimulationBindGroup(pub BindGroup);
 
 #[derive(Resource)]
 pub struct SimulationShaderPipeline {
@@ -28,7 +31,7 @@ impl FromWorld for SimulationShaderPipeline {
             world
                 .resource::<RenderDevice>()
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: None,
+                    label: Some("sim bind group"),
                     entries: &[
                         // TODO: entries
                     ],
@@ -38,7 +41,7 @@ impl FromWorld for SimulationShaderPipeline {
             .load("shaders/simulation.wgsl");
         let pipeline_cache = world.resource_mut::<PipelineCache>();
         let init_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-            label: None,
+            label: Some(Cow::from("sim init pipeline")),
             layout: vec![texture_bind_group_layout.clone()],
             shader: shader.clone(),
             shader_defs: vec![],
@@ -46,7 +49,7 @@ impl FromWorld for SimulationShaderPipeline {
             push_constant_ranges: vec![],
         });
         let update_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-            label: None,
+            label: Some(Cow::from("sim update pipeline")),
             layout: vec![texture_bind_group_layout.clone()],
             shader,
             shader_defs: vec![],
@@ -69,13 +72,13 @@ pub fn queue_bind_group(
     render_device: Res<RenderDevice>,
 ) {
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-        label: None,
+        label: Some("sim bind group"),
         layout: &pipeline.texture_bind_group_layout,
         entries: &[
             // TODO: entries
         ],
     });
-    commands.insert_resource(RenderImageBindGroup(bind_group));
+    commands.insert_resource(SimulationBindGroup(bind_group));
 }
 
 pub struct SimulationShaderNode {
@@ -121,7 +124,7 @@ impl render_graph::Node for SimulationShaderNode {
         render_context: &mut RenderContext,
         world: &World,
     ) -> Result<(), render_graph::NodeRunError> {
-        let texture_bind_group = &world.resource::<RenderImageBindGroup>().0;
+        let texture_bind_group = &world.resource::<SimulationBindGroup>().0;
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = world.resource::<SimulationShaderPipeline>();
         // let state = &world.resource::<RenderState>().state;
