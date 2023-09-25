@@ -68,7 +68,6 @@ impl FromWorld for SimulationShaderPipeline {
 pub fn queue_bind_group(
     mut commands: Commands,
     pipeline: Res<SimulationShaderPipeline>,
-    // gpu_images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
 ) {
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
@@ -127,9 +126,6 @@ impl render_graph::Node for SimulationShaderNode {
         let texture_bind_group = &world.resource::<SimulationBindGroup>().0;
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = world.resource::<SimulationShaderPipeline>();
-        // let state = &world.resource::<RenderState>().state;
-        // let window_size = &world.resource::<Params>().size;
-        // let workgroup_size = (window_size / 8) as u32;
 
         let mut pass = render_context
             .command_encoder()
