@@ -9,6 +9,8 @@ use objects::*;
 pub mod menu;
 pub mod objects;
 pub mod render;
+pub mod render_shader_pipeline;
+pub mod sim_shader_pipeline;
 
 #[derive(States, Debug, Default, Clone, Eq, PartialEq, Hash)]
 enum AppState {
