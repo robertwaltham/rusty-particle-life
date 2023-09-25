@@ -8,16 +8,17 @@ use bevy::{
         render_resource::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
-            CachedComputePipelineId, CachedPipelineState, ComputePassDescriptor,
-            ComputePipelineDescriptor, PipelineCache, ShaderStages, StorageTextureAccess,
-            TextureFormat, TextureViewDimension,
+            BufferBindingType, BufferSize, CachedComputePipelineId, CachedPipelineState,
+            ComputePassDescriptor, ComputePipelineDescriptor, PipelineCache, ShaderStages,
+            StorageTextureAccess, TextureFormat, TextureViewDimension,
         },
         renderer::{RenderContext, RenderDevice},
     },
 };
 
 use crate::{
-    render::{ComputeShaderState, RenderImage},
+    objects::{ParticleColours, Particles},
+    render::{ComputeShaderState, ParticleBuffer, ParticleColourBuffer, RenderImage},
     SIZE, WORKGROUP_SIZE,
 };
 
@@ -38,16 +39,54 @@ impl FromWorld for RenderShaderPipeline {
                 .resource::<RenderDevice>()
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
                     label: Some("render bind group"),
-                    entries: &[BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty: BindingType::StorageTexture {
-                            access: StorageTextureAccess::WriteOnly,
-                            format: TextureFormat::Rgba8Unorm,
-                            view_dimension: TextureViewDimension::D2,
+                    entries: &[
+                        BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::StorageTexture {
+                                access: StorageTextureAccess::WriteOnly,
+                                format: TextureFormat::Rgba8Unorm,
+                                view_dimension: TextureViewDimension::D2,
+                            },
+                            count: None,
                         },
-                        count: None,
-                    }],
+                        BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Buffer {
+                                ty: BufferBindingType::Storage { read_only: false },
+                                has_dynamic_offset: false,
+                                min_binding_size: BufferSize::new(
+                                    std::mem::size_of::<Particles>() as u64
+                                ),
+                            },
+                            count: None,
+                        },
+                        // BindGroupLayoutEntry {
+                        //     binding: 1,
+                        //     visibility: ShaderStages::COMPUTE,
+                        //     ty: BindingType::Buffer {
+                        //         ty: BufferBindingType::Uniform,
+                        //         has_dynamic_offset: false,
+                        //         min_binding_size: BufferSize::new(
+                        //             std::mem::size_of::<Weights>() as u64
+                        //         ),
+                        //     },
+                        //     count: None,
+                        // },
+                        BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Buffer {
+                                ty: BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: BufferSize::new(
+                                    std::mem::size_of::<ParticleColours>() as u64,
+                                ),
+                            },
+                            count: None,
+                        },
+                    ],
                 });
         let shader = world.resource::<AssetServer>().load("shaders/render.wgsl");
         let pipeline_cache = world.resource_mut::<PipelineCache>();
@@ -82,16 +121,41 @@ pub fn queue_bind_group(
     gpu_images: Res<RenderAssets<Image>>,
     output_image: Res<RenderImage>,
     render_device: Res<RenderDevice>,
+    particles_buffer: Res<ParticleBuffer>,
+    // weights_buffer: Res<WeightsBuffer>,
+    particle_colours_buffer: Res<ParticleColourBuffer>,
 ) {
     let output_view = &gpu_images[&output_image.image];
 
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
         label: Some("render bind group"),
         layout: &pipeline.texture_bind_group_layout,
-        entries: &[BindGroupEntry {
-            binding: 0,
-            resource: BindingResource::TextureView(&output_view.texture_view),
-        }],
+        entries: &[
+            BindGroupEntry {
+                binding: 0,
+                resource: BindingResource::TextureView(&output_view.texture_view),
+            },
+            BindGroupEntry {
+                binding: 1,
+                resource: particles_buffer
+                    .buffer
+                    .as_ref()
+                    .unwrap()
+                    .as_entire_binding(),
+            },
+            // BindGroupEntry {
+            //     binding: 1,
+            //     resource: weights_buffer.buffer.as_ref().unwrap().as_entire_binding(),
+            // },
+            BindGroupEntry {
+                binding: 2,
+                resource: particle_colours_buffer
+                    .buffer
+                    .as_ref()
+                    .unwrap()
+                    .as_entire_binding(),
+            },
+        ],
     });
     commands.insert_resource(RenderBindGroup(bind_group));
 }

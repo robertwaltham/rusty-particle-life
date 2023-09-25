@@ -102,7 +102,10 @@ fn prepare_buffers(
         particles_buffer.buffer = Some(render_device.create_buffer(&BufferDescriptor {
             label: Some("particles buffer"),
             size: std::mem::size_of::<Particles>() as u64,
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            usage: BufferUsages::STORAGE
+                // | BufferUsages::MAP_READ
+                // | BufferUsages::MAP_WRITE
+                | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
     }
