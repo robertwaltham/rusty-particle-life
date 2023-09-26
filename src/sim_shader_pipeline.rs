@@ -3,20 +3,22 @@ use std::borrow::Cow;
 use bevy::{
     prelude::*,
     render::{
+        render_asset::RenderAssets,
         render_graph::{self},
         render_resource::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferBindingType,
-            BufferSize, CachedComputePipelineId, CachedPipelineState, ComputePassDescriptor,
-            ComputePipelineDescriptor, PipelineCache, ShaderStages,
+            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
+            BufferBindingType, BufferSize, CachedComputePipelineId, CachedPipelineState,
+            ComputePassDescriptor, ComputePipelineDescriptor, PipelineCache, ShaderStages,
+            StorageTextureAccess, TextureFormat, TextureViewDimension,
         },
         renderer::{RenderContext, RenderDevice},
     },
 };
 
 use crate::{
-    objects::{Particles, Weights},
-    render::{ComputeShaderState, ParticleBuffer, WeightsBuffer},
+    objects::{Particles, WeightsImage},
+    render::{ComputeShaderState, ParticleBuffer},
 };
 
 #[derive(Resource)]
@@ -52,12 +54,10 @@ impl FromWorld for SimulationShaderPipeline {
                         BindGroupLayoutEntry {
                             binding: 1,
                             visibility: ShaderStages::COMPUTE,
-                            ty: BindingType::Buffer {
-                                ty: BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: BufferSize::new(
-                                    std::mem::size_of::<Weights>() as u64
-                                ),
+                            ty: BindingType::StorageTexture {
+                                access: StorageTextureAccess::ReadOnly,
+                                format: TextureFormat::Rgba8Unorm,
+                                view_dimension: TextureViewDimension::D2,
                             },
                             count: None,
                         },
@@ -109,9 +109,12 @@ pub fn queue_bind_group(
     pipeline: Res<SimulationShaderPipeline>,
     render_device: Res<RenderDevice>,
     particles_buffer: Res<ParticleBuffer>,
-    weights_buffer: Res<WeightsBuffer>,
+    weights_image: Res<WeightsImage>,
+    gpu_images: Res<RenderAssets<Image>>,
     // particle_colours_buffer: Res<ParticleColourBuffer>,
 ) {
+    let weights_view: &bevy::render::texture::GpuImage = &gpu_images[&weights_image.image];
+
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
         label: Some("sim bind group"),
         layout: &pipeline.texture_bind_group_layout,
@@ -126,7 +129,7 @@ pub fn queue_bind_group(
             },
             BindGroupEntry {
                 binding: 1,
-                resource: weights_buffer.buffer.as_ref().unwrap().as_entire_binding(),
+                resource: BindingResource::TextureView(&weights_view.texture_view),
             },
             // BindGroupEntry {
             //     binding: 2,

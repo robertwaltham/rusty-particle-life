@@ -17,8 +17,8 @@ use bevy::{
 };
 
 use crate::{
-    objects::{ParticleColours, Particles},
-    render::{ComputeShaderState, ParticleBuffer, ParticleColourBuffer, RenderImage},
+    objects::{ParticleColours, Particles, RenderImage},
+    render::{ComputeShaderState, ParticleBuffer, ParticleColourBuffer},
     SIZE, WORKGROUP_SIZE,
 };
 
@@ -125,7 +125,7 @@ pub fn queue_bind_group(
     // weights_buffer: Res<WeightsBuffer>,
     particle_colours_buffer: Res<ParticleColourBuffer>,
 ) {
-    let output_view = &gpu_images[&output_image.image];
+    let output_view: &bevy::render::texture::GpuImage = &gpu_images[&output_image.image];
 
     let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
         label: Some("render bind group"),

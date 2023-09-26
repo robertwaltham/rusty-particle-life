@@ -1,12 +1,12 @@
 use bevy::{
-    prelude::Resource,
+    prelude::{Deref, Handle, Image, Resource},
     reflect::Reflect,
     render::{extract_resource::ExtractResource, render_resource::ShaderType},
 };
 use bytemuck::{Pod, Zeroable};
 
-const MAX_FLAVOURS: usize = 10;
-const MAX_PARTICLES: usize = 16;
+pub const MAX_FLAVOURS: usize = 10;
+pub const MAX_PARTICLES: usize = 16;
 
 #[derive(
     ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Default, Debug,
@@ -22,9 +22,9 @@ pub struct Particle {
     index: f32,
 }
 
-#[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default, Pod, Zeroable)]
-#[repr(C)]
-pub struct Weights([[f32; MAX_FLAVOURS]; MAX_FLAVOURS]);
+// #[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default, Pod, Zeroable)]
+// #[repr(C)]
+// pub struct Weights([[f32; MAX_FLAVOURS]; MAX_FLAVOURS]);
 
 #[derive(Resource, Reflect, ExtractResource, Clone, Copy, Pod, Zeroable)]
 #[repr(C)]
@@ -38,3 +38,13 @@ impl Default for Particles {
 #[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default, Pod, Zeroable)]
 #[repr(C)]
 pub struct ParticleColours([[f32; 4]; MAX_FLAVOURS]);
+
+#[derive(Resource, Clone, Deref, ExtractResource, Reflect)]
+pub struct RenderImage {
+    pub image: Handle<Image>,
+}
+
+#[derive(Resource, Clone, Deref, ExtractResource, Reflect)]
+pub struct WeightsImage {
+    pub image: Handle<Image>,
+}

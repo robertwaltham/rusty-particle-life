@@ -1,7 +1,9 @@
-use crate::render::{RenderImage, RenderPlugin};
+use crate::render::RenderPlugin;
 use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
+    sprite::Anchor,
+    window::{PrimaryWindow, Window},
 };
 use menu::Menu;
 use objects::*;
@@ -64,13 +66,22 @@ fn run() {
         .add_systems(Startup, setup)
         .add_state::<AppState>()
         .init_resource::<Particles>()
-        .init_resource::<Weights>()
         .init_resource::<ParticleColours>()
         .run();
 }
 
-fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+fn setup(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
     commands.spawn(Camera2dBundle::default());
+
+    let window = window_query
+        .get_single()
+        .expect("Expected to have a primary window");
+
+    let resolution = window.resolution.clone();
 
     let mut image = Image::new_fill(
         Extent3d {
@@ -97,5 +108,48 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
 
     commands.insert_resource(RenderImage {
         image: image_handle.clone(),
+    });
+
+    let mut weights = Image::new_fill(
+        Extent3d {
+            width: MAX_FLAVOURS as u32,
+            height: MAX_FLAVOURS as u32,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[128, 0, 0, 255],
+        TextureFormat::Rgba8Unorm,
+    );
+    weights.texture_descriptor.usage =
+        TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
+
+    let weights_handle = images.add(weights);
+
+    commands
+        .spawn(SpriteBundle {
+            texture: weights_handle.clone(),
+            transform: Transform {
+                translation: Vec3 {
+                    x: resolution.width() / 2. - 10.,
+                    y: -resolution.height() / 2. + 10.,
+                    z: 0.,
+                },
+                rotation: Quat::IDENTITY,
+                scale: Vec3 {
+                    x: 10.,
+                    y: 10.,
+                    z: 1.,
+                },
+            },
+            sprite: Sprite {
+                anchor: Anchor::BottomRight,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("Weights Sprite"));
+
+    commands.insert_resource(WeightsImage {
+        image: weights_handle.clone(),
     });
 }

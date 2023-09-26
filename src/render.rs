@@ -1,7 +1,7 @@
 use bevy::{
     prelude::*,
     render::{
-        extract_resource::{ExtractResource, ExtractResourcePlugin},
+        extract_resource::ExtractResourcePlugin,
         render_graph::RenderGraph,
         render_resource::{Buffer, BufferDescriptor, BufferUsages},
         renderer::{RenderDevice, RenderQueue},
@@ -11,23 +11,13 @@ use bevy::{
 use bytemuck::bytes_of;
 
 use crate::{
-    objects::{ParticleColours, Particles, Weights},
+    objects::{ParticleColours, Particles, RenderImage, WeightsImage},
     render_shader_pipeline::{RenderShaderNode, RenderShaderPipeline},
     sim_shader_pipeline::{SimulationShaderNode, SimulationShaderPipeline},
 };
 
-#[derive(Resource, Clone, Deref, ExtractResource, Reflect)]
-pub struct RenderImage {
-    pub image: Handle<Image>,
-}
-
 #[derive(Resource, Debug)]
 pub struct ParticleBuffer {
-    pub buffer: Option<Buffer>,
-}
-
-#[derive(Resource, Debug)]
-pub struct WeightsBuffer {
     pub buffer: Option<Buffer>,
 }
 
@@ -51,7 +41,7 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             ExtractResourcePlugin::<RenderImage>::default(),
-            ExtractResourcePlugin::<Weights>::default(),
+            ExtractResourcePlugin::<WeightsImage>::default(),
             ExtractResourcePlugin::<Particles>::default(),
             ExtractResourcePlugin::<ParticleColours>::default(),
         ));
@@ -69,7 +59,6 @@ impl Plugin for RenderPlugin {
             )
             .add_systems(Render, prepare_buffers.in_set(RenderSet::Prepare))
             .insert_resource(ParticleBuffer { buffer: None })
-            .insert_resource(WeightsBuffer { buffer: None })
             .insert_resource(ParticleColourBuffer { buffer: None });
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
@@ -90,10 +79,8 @@ impl Plugin for RenderPlugin {
 
 fn prepare_buffers(
     particles: Res<Particles>,
-    weights: Res<Weights>,
     particle_colours: Res<ParticleColours>,
     mut particles_buffer: ResMut<ParticleBuffer>,
-    mut weights_buffer: ResMut<WeightsBuffer>,
     mut particle_colours_buffer: ResMut<ParticleColourBuffer>,
     render_queue: Res<RenderQueue>,
     render_device: Res<RenderDevice>,
@@ -106,15 +93,6 @@ fn prepare_buffers(
                 // | BufferUsages::MAP_READ
                 // | BufferUsages::MAP_WRITE
                 | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        }));
-    }
-
-    if weights_buffer.buffer.is_none() {
-        weights_buffer.buffer = Some(render_device.create_buffer(&BufferDescriptor {
-            label: Some("weights buffer"),
-            size: std::mem::size_of::<Weights>() as u64,
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
     }
@@ -132,12 +110,6 @@ fn prepare_buffers(
         &particles_buffer.buffer.as_ref().unwrap(),
         0,
         bytes_of(particles.as_ref()),
-    );
-
-    render_queue.write_buffer(
-        &weights_buffer.buffer.as_ref().unwrap(),
-        0,
-        bytes_of(weights.as_ref()),
     );
 
     render_queue.write_buffer(
