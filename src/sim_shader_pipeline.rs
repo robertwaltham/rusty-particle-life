@@ -14,7 +14,8 @@ use bevy::{
     },
 };
 use bytemuck::cast_slice;
-use std::borrow::Cow;
+use std::{borrow::Cow, num::NonZeroU32};
+use wgpu::TextureSampleType;
 
 use crate::{
     objects::{Particle, Particles, WeightsImage},
@@ -51,15 +52,25 @@ impl FromWorld for SimulationShaderPipeline {
                             },
                             count: None,
                         },
+                        // BindGroupLayoutEntry {
+                        //     binding: 1,
+                        //     visibility: ShaderStages::COMPUTE,
+                        //     ty: BindingType::StorageTexture {
+                        //         access: StorageTextureAccess::ReadWrite,
+                        //         format: TextureFormat::Rgba8Unorm,
+                        //         view_dimension: TextureViewDimension::D2,
+                        //     },
+                        //     count: None,
+                        // },
                         BindGroupLayoutEntry {
                             binding: 1,
                             visibility: ShaderStages::COMPUTE,
-                            ty: BindingType::StorageTexture {
-                                access: StorageTextureAccess::ReadOnly,
-                                format: TextureFormat::Rgba8Unorm,
+                            ty: BindingType::Texture {
+                                sample_type: TextureSampleType::Float { filterable: false },
                                 view_dimension: TextureViewDimension::D2,
+                                multisampled: false,
                             },
-                            count: None,
+                            count: NonZeroU32::new(1),
                         },
                         // BindGroupLayoutEntry {
                         //     binding: 2,
@@ -218,24 +229,25 @@ impl render_graph::Node for SimulationShaderNode {
             }
         }
 
-        if let Some(buffer) = &particle_buffer.buffer {
-            buffer.slice(..).map_async(MapMode::Read, move |result| {
-                let err = result.err();
-                if err.is_some() {
-                    let some_err = err.unwrap();
-                    panic!("{}", some_err.to_string());
-                }
-            });
+        // if let Some(buffer) = &particle_buffer.buffer {
+        //     buffer.slice(..).map_async(MapMode::Read, move |result| {
+        //         let err = result.err();
+        //         if err.is_some() {
+        //             let some_err = err.unwrap();
+        //             panic!("{}", some_err.to_string());
+        //         }
+        //     });
 
-            let device = world.resource::<RenderDevice>();
-            device.poll(wgpu::MaintainBase::Wait);
+        //     let device = world.resource::<RenderDevice>();
+        //     device.poll(wgpu::MaintainBase::Wait);
 
-            let range = buffer.slice(..).get_mapped_range();
-            let vec: Vec<Particle> = cast_slice(&range).to_vec();
-            println!("{:?}", vec);
-            drop(range);
-            buffer.unmap();
-        }
+        //     let range = buffer.slice(..).get_mapped_range();
+        //     let _vec: Vec<Particle> = cast_slice(&range).to_vec();
+        //     // println!("{:?}", _vec.first()); // uncomment for debugging
+
+        //     drop(range);
+        //     buffer.unmap();
+        // }
 
         Ok(())
     }

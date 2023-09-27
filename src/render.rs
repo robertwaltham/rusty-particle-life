@@ -91,10 +91,16 @@ fn prepare_buffers(
             size: std::mem::size_of::<Particles>() as u64,
             usage: BufferUsages::STORAGE
                 | BufferUsages::MAP_READ
-                // | BufferUsages::MAP_WRITE
+                | BufferUsages::MAP_WRITE
                 | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
+
+        render_queue.write_buffer(
+            &particles_buffer.buffer.as_ref().unwrap(),
+            0,
+            bytes_of(particles.as_ref()),
+        );
     }
 
     if particle_colours_buffer.buffer.is_none() {
@@ -105,12 +111,6 @@ fn prepare_buffers(
             mapped_at_creation: false,
         }));
     }
-
-    render_queue.write_buffer(
-        &particles_buffer.buffer.as_ref().unwrap(),
-        0,
-        bytes_of(particles.as_ref()),
-    );
 
     render_queue.write_buffer(
         &particle_colours_buffer.buffer.as_ref().unwrap(),

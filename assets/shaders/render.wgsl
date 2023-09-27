@@ -10,7 +10,7 @@ struct Particle {
 }
 
 @group(0) @binding(1) 
-var<storage> particles: array<Particle, 16>;
+var<storage, read_write> particles: array<Particle, 64>;
 
 
 @compute @workgroup_size(8, 8, 1)
@@ -22,5 +22,17 @@ fn init(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_wo
 }
 
 @compute @workgroup_size(8, 8, 1)
-fn update(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_workgroups) num_workgroups: vec3<u32>) {
+fn update(@builtin(local_invocation_index) invocation_id: u32, @builtin(num_workgroups) num_workgroups: vec3<u32>) {
+    let particle = particles[invocation_id];
+    let color = vec4<f32>(1., 0., 0., 1.0);
+
+    let position = vec3<i32>(particle.position).xy;
+
+    let stride = 3;
+
+    for (var i = position.x - stride; i < position.x + stride; i++) {
+        for (var j = position.y - stride; j < position.y + stride; j++) {
+            textureStore(texture, vec2<i32>(i, j), color);
+        }
+    }
 }

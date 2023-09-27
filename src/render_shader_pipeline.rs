@@ -224,11 +224,17 @@ impl render_graph::Node for RenderShaderNode {
                 pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE.0, SIZE.1 / WORKGROUP_SIZE.1, 1);
             }
             ComputeShaderState::Update => {
+                let init_pipeline = pipeline_cache
+                    .get_compute_pipeline(pipeline.init_pipeline)
+                    .unwrap();
+                pass.set_pipeline(init_pipeline);
+                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE.0, SIZE.1 / WORKGROUP_SIZE.1, 1);
+
                 let update_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.update_pipeline)
                     .unwrap();
                 pass.set_pipeline(update_pipeline);
-                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE.0, SIZE.1 / WORKGROUP_SIZE.1, 1);
+                pass.dispatch_workgroups(1, 1, 1); // TODO adjust based on particle size
             }
         }
 

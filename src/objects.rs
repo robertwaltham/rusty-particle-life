@@ -4,13 +4,12 @@ use bevy::{
     render::{extract_resource::ExtractResource, render_resource::ShaderType},
 };
 use bytemuck::{Pod, Zeroable};
+use rand::prelude::*;
 
 pub const MAX_FLAVOURS: usize = 10;
-pub const MAX_PARTICLES: usize = 16;
+pub const MAX_PARTICLES: usize = 64;
 
-#[derive(
-    ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Default, Debug,
-)]
+#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Debug)]
 #[repr(C)]
 pub struct Particle {
     position: [f32; 3],
@@ -18,8 +17,22 @@ pub struct Particle {
     velocity: [f32; 3],
     _padding2: f32,
     acceleration: [f32; 3], // TODO: is this needed
-    _padding3: f32,
     index: f32,
+}
+
+impl Default for Particle {
+    fn default() -> Self {
+        let p: [f32; 3] = [random::<f32>() * 512., random::<f32>() * 512., 0.];
+
+        Self {
+            position: p,
+            _padding1: Default::default(),
+            velocity: random(),
+            _padding2: Default::default(),
+            acceleration: Default::default(),
+            index: Default::default(),
+        }
+    }
 }
 
 // #[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default, Pod, Zeroable)]
