@@ -2874,6 +2874,7 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
  "web-sys",
+ "wgpu",
 ]
 
 [[package]]

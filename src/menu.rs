@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{self, Button, FontId, RichText},
+    egui::{self},
     EguiContexts, EguiPlugin,
 };
 const PANEL_WIDTH: f32 = 200.;
@@ -22,7 +22,7 @@ fn ui_system(
     egui::SidePanel::left("side_panel")
         .resizable(false)
         .min_width(PANEL_WIDTH)
-        .show(ctx, |ui| {
+        .show(ctx, |_ui| {
             // TODO: controls
         });
 }

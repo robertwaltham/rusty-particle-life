@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use bevy::{
     prelude::*,
     render::{
@@ -9,15 +7,17 @@ use bevy::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             BufferBindingType, BufferSize, CachedComputePipelineId, CachedPipelineState,
-            ComputePassDescriptor, ComputePipelineDescriptor, PipelineCache, ShaderStages,
+            ComputePassDescriptor, ComputePipelineDescriptor, MapMode, PipelineCache, ShaderStages,
             StorageTextureAccess, TextureFormat, TextureViewDimension,
         },
         renderer::{RenderContext, RenderDevice},
     },
 };
+use bytemuck::cast_slice;
+use std::borrow::Cow;
 
 use crate::{
-    objects::{Particles, WeightsImage},
+    objects::{Particle, Particles, WeightsImage},
     render::{ComputeShaderState, ParticleBuffer},
 };
 
@@ -160,6 +160,7 @@ impl render_graph::Node for SimulationShaderNode {
     fn update(&mut self, world: &mut World) {
         let pipeline = world.resource::<SimulationShaderPipeline>();
         let pipeline_cache = world.resource::<PipelineCache>();
+        // let particle_buffer = world.resource::<ParticleBuffer>();
 
         // if the corresponding pipeline has loaded, transition to the next stage
         match self.state {
@@ -190,6 +191,7 @@ impl render_graph::Node for SimulationShaderNode {
         let texture_bind_group = &world.resource::<SimulationBindGroup>().0;
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = world.resource::<SimulationShaderPipeline>();
+        let particle_buffer = world.resource::<ParticleBuffer>();
 
         let mut pass = render_context
             .command_encoder()
@@ -214,6 +216,25 @@ impl render_graph::Node for SimulationShaderNode {
                 pass.set_pipeline(update_pipeline);
                 pass.dispatch_workgroups(1, 1, 1); // TODO: workgroup size
             }
+        }
+
+        if let Some(buffer) = &particle_buffer.buffer {
+            buffer.slice(..).map_async(MapMode::Read, move |result| {
+                let err = result.err();
+                if err.is_some() {
+                    let some_err = err.unwrap();
+                    panic!("{}", some_err.to_string());
+                }
+            });
+
+            let device = world.resource::<RenderDevice>();
+            device.poll(wgpu::MaintainBase::Wait);
+
+            let range = buffer.slice(..).get_mapped_range();
+            let vec: Vec<Particle> = cast_slice(&range).to_vec();
+            println!("{:?}", vec);
+            drop(range);
+            buffer.unmap();
         }
 
         Ok(())
