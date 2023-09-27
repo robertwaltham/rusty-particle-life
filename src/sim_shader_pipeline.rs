@@ -62,16 +62,16 @@ impl FromWorld for SimulationShaderPipeline {
                         //     },
                         //     count: None,
                         // },
-                        // BindGroupLayoutEntry {
-                        //     binding: 1,
-                        //     visibility: ShaderStages::COMPUTE,
-                        //     ty: BindingType::Texture {
-                        //         sample_type: TextureSampleType::Float { filterable: false },
-                        //         view_dimension: TextureViewDimension::D2,
-                        //         multisampled: false,
-                        //     },
-                        //     count: NonZeroU32::new(1),
-                        // },
+                        BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Texture {
+                                sample_type: TextureSampleType::Float { filterable: false },
+                                view_dimension: TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: NonZeroU32::new(1),
+                        },
                         // BindGroupLayoutEntry {
                         //     binding: 2,
                         //     visibility: ShaderStages::COMPUTE,
@@ -138,10 +138,10 @@ pub fn queue_bind_group(
                     .unwrap()
                     .as_entire_binding(),
             },
-            // BindGroupEntry {
-            //     binding: 1,
-            //     resource: BindingResource::TextureView(&weights_view.texture_view),
-            // },
+            BindGroupEntry {
+                binding: 1,
+                resource: BindingResource::TextureView(&weights_view.texture_view),
+            },
             // BindGroupEntry {
             //     binding: 2,
             //     resource: particle_colours_buffer

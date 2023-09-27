@@ -6,10 +6,14 @@ use bevy::{
 use bytemuck::{Pod, Zeroable};
 use rand::prelude::*;
 
+use crate::SIZE;
+
 pub const MAX_FLAVOURS: usize = 10;
 pub const MAX_PARTICLES: usize = 64;
 
-#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Debug)]
+#[derive(
+    ShaderType, Pod, Zeroable, Clone, Copy, Resource, Reflect, ExtractResource, Debug, Default,
+)]
 #[repr(C)]
 pub struct Particle {
     position: [f32; 3],
@@ -18,21 +22,6 @@ pub struct Particle {
     _padding2: f32,
     acceleration: [f32; 3], // TODO: is this needed
     index: f32,
-}
-
-impl Default for Particle {
-    fn default() -> Self {
-        let p: [f32; 3] = [random::<f32>() * 512., random::<f32>() * 512., 0.];
-
-        Self {
-            position: p,
-            _padding1: Default::default(),
-            velocity: random(),
-            _padding2: Default::default(),
-            acceleration: Default::default(),
-            index: Default::default(),
-        }
-    }
 }
 
 // #[derive(Resource, Reflect, ExtractResource, Clone, Copy, Default, Pod, Zeroable)]
@@ -44,7 +33,20 @@ impl Default for Particle {
 pub struct Particles([Particle; MAX_PARTICLES]);
 impl Default for Particles {
     fn default() -> Self {
-        Self([Particle::default(); MAX_PARTICLES])
+        let mut particles = [Particle::default(); MAX_PARTICLES];
+
+        for i in 0..MAX_PARTICLES {
+            particles[i].position = [
+                (random::<f32>() * (SIZE.0 as f32)) - (SIZE.0 as f32 / 2.),
+                (random::<f32>() * (SIZE.1 as f32)) - (SIZE.1 as f32 / 2.),
+                0.,
+            ];
+
+            particles[i].velocity = [random::<f32>() - 0.5, random::<f32>() - 0.5, 0.]
+        }
+
+        println!("{:?}", particles);
+        Self(particles)
     }
 }
 
