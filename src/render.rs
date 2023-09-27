@@ -90,8 +90,8 @@ fn prepare_buffers(
             label: Some("particles buffer"),
             size: std::mem::size_of::<Particles>() as u64,
             usage: BufferUsages::STORAGE
-                | BufferUsages::MAP_READ
-                | BufferUsages::MAP_WRITE
+                // | BufferUsages::MAP_READ
+                // | BufferUsages::MAP_WRITE
                 | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));

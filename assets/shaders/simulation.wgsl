@@ -8,8 +8,8 @@ struct Particle {
 @group(0) @binding(0) 
 var<storage, read_write> particles: array<Particle, 64>;
 
-@group(0) @binding(1)
-var weights: texture_2d<f32>;
+// @group(0) @binding(1)
+// var weights: texture_2d<f32>;
 
 
 @compute @workgroup_size(8, 8, 1)
